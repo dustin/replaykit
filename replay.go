@@ -57,6 +57,17 @@ func FunctionAction(f func(Event)) Action {
 	return functionAction(f)
 }
 
+type functionSource func() Event
+
+func (f functionSource) Next() Event {
+	return f()
+}
+
+// An source from a function.
+func FunctionSource(f func() Event) Source {
+	return functionSource(f)
+}
+
 // Build a new Replayer with time scaled to the given amount.
 //
 // scale should be > 0
