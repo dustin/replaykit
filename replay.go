@@ -52,7 +52,7 @@ func (f functionAction) Process(ev Event) {
 	f(ev)
 }
 
-// An action that wraps a function.
+// Create an action from a function.
 func FunctionAction(f func(Event)) Action {
 	return functionAction(f)
 }
@@ -63,7 +63,7 @@ func (f functionSource) Next() Event {
 	return f()
 }
 
-// An source from a function.
+// Create a source from a function.
 func FunctionSource(f func() Event) Source {
 	return functionSource(f)
 }
