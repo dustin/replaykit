@@ -46,6 +46,17 @@ func (r *Replay) syncTime(eventTime time.Time) {
 	}
 }
 
+type functionAction func(Event)
+
+func (f functionAction) Process(ev Event) {
+	f(ev)
+}
+
+// An action that wraps a function.
+func FunctionAction(f func(Event)) Action {
+	return functionAction(f)
+}
+
 // Build a new Replayer with time scaled to the given amount.
 //
 // scale should be > 0
