@@ -1,4 +1,5 @@
-// Timed event replay toolkit.
+// Package replay provides a framework for replaying a timestamped
+// sequence of events at a relative time.
 package replay
 
 import (
@@ -6,12 +7,12 @@ import (
 	"time"
 )
 
-// An individual event found in the source.
+// An Event represents individual event found in the source.
 type Event interface {
 	TS() time.Time // The time this event occurred.
 }
 
-// A source of events (e.g. log reader, etc...)
+// A Source of events (e.g. log reader, etc...)
 type Source interface {
 	// Next event from the log, nil if there are no more
 	Next() Event
@@ -23,7 +24,7 @@ type Action interface {
 	Process(ev Event)
 }
 
-// The replayer.  Build a new one with New.
+// Replay is the primary replay type.  Build a new one with New.
 type Replay struct {
 	timeScale  float64
 	firstEvent time.Time
@@ -48,11 +49,12 @@ func (r *Replay) syncTime(eventTime time.Time) {
 
 type functionAction func(Event)
 
+// Process the event.
 func (f functionAction) Process(ev Event) {
 	f(ev)
 }
 
-// Create an action from a function.
+// FunctionAction wraps a function as an Action.
 func FunctionAction(f func(Event)) Action {
 	return functionAction(f)
 }
@@ -63,12 +65,12 @@ func (f functionSource) Next() Event {
 	return f()
 }
 
-// Create a source from a function.
+// FunctionSource creates a source from a function.
 func FunctionSource(f func() Event) Source {
 	return functionSource(f)
 }
 
-// Build a new Replayer with time scaled to the given amount.
+// New creates a new Replay with time scaled to the given amount.
 //
 // scale should be > 0
 func New(scale float64) *Replay {
