@@ -84,10 +84,6 @@ func New(scale float64) *Replay {
 //
 // Returns the amount of time we were "off" of the target.
 func (r *Replay) Run(s Source, action Action) time.Duration {
-	if r.timeScale <= 0 {
-		log.Panic("Timescale must be > 0")
-	}
-
 	event := s.Next()
 	if event == nil {
 		return time.Duration(0)
