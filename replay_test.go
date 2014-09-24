@@ -39,26 +39,21 @@ func (f *fakeTime) sleep(d time.Duration) {
 	f.passed += d
 }
 
-type noopAction struct{}
-
-func (noopAction) Process(Event) {}
-
 type dumbEvent time.Time
 
 func (d dumbEvent) TS() time.Time { return time.Time(d) }
 
-type directSource struct {
-	events []Event
+func genEvents() []Event {
+	base := time.Now()
+	return []Event{
+		dumbEvent(base.Add(5 * time.Second)),
+		dumbEvent(base.Add(6 * time.Second)),
+		dumbEvent(base.Add(9 * time.Second)),
+		dumbEvent(base.Add(13 * time.Second)),
+	}
 }
 
-func (d *directSource) Next() Event {
-	if len(d.events) == 0 {
-		return nil
-	}
-	rv := d.events[0]
-	d.events = d.events[1:]
-	return rv
-}
+var noopAction = FunctionAction(func(Event) {})
 
 func TestRun(t *testing.T) {
 	r := New(1)
@@ -66,20 +61,49 @@ func TestRun(t *testing.T) {
 	r.now = tm.now
 	r.sleep = tm.sleep
 
-	base := time.Now()
-	s := &directSource{
-		events: []Event{
-			dumbEvent(base.Add(5 * time.Second)),
-			dumbEvent(base.Add(6 * time.Second)),
-			dumbEvent(base.Add(9 * time.Second)),
-			dumbEvent(base.Add(13 * time.Second)),
-		}}
-
-	off := r.Run(s, noopAction{})
+	off := r.Run(CollectionSource(genEvents()), noopAction)
 	if off != 0 {
 		t.Errorf("Expected to be off by 0, was off by %v", off)
 	}
 	if tm.passed != (8 * time.Second) {
 		t.Errorf("Expected to take 8 seconds, took %v", tm.passed)
+	}
+}
+
+func TestRun2x(t *testing.T) {
+	r := New(2)
+	tm := &fakeTime{}
+	r.now = tm.now
+	r.sleep = tm.sleep
+
+	off := r.Run(CollectionSource(genEvents()), noopAction)
+	if off != 0 {
+		t.Errorf("Expected to be off by 0, was off by %v", off)
+	}
+	if tm.passed != (4 * time.Second) {
+		t.Errorf("Expected to take 8 seconds, took %v", tm.passed)
+	}
+}
+
+func TestRunHalfx(t *testing.T) {
+	r := New(0.5)
+	tm := &fakeTime{}
+	r.now = tm.now
+	r.sleep = tm.sleep
+
+	off := r.Run(CollectionSource(genEvents()), noopAction)
+	if off != 0 {
+		t.Errorf("Expected to be off by 0, was off by %v", off)
+	}
+	if tm.passed != (16 * time.Second) {
+		t.Errorf("Expected to take 8 seconds, took %v", tm.passed)
+	}
+}
+
+func TestRunNil(t *testing.T) {
+	r := New(1)
+	off := r.Run(CollectionSource(nil), FunctionAction(func(Event) {}))
+	if off != 0 {
+		t.Errorf("Expected nil input to run with 0 off, got %v", off)
 	}
 }

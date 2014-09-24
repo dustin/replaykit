@@ -73,6 +73,18 @@ func FunctionSource(f func() Event) Source {
 	return functionSource(f)
 }
 
+// CollectionSource emits events from an input slice
+func CollectionSource(evs []Event) Source {
+	return FunctionSource(func() Event {
+		if len(evs) == 0 {
+			return nil
+		}
+		rv := evs[0]
+		evs = evs[1:]
+		return rv
+	})
+}
+
 // New creates a new Replay with time scaled to the given amount.
 //
 // scale should be > 0
