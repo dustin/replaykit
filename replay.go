@@ -89,7 +89,7 @@ func New(scale float64) *Replay {
 func (r *Replay) Run(s Source, action Action) time.Duration {
 	event := s.Next()
 	if event == nil {
-		return time.Duration(0)
+		return 0
 	}
 
 	r.realStart = r.now()
