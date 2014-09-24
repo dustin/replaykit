@@ -29,10 +29,13 @@ type Replay struct {
 	timeScale  float64
 	firstEvent time.Time
 	realStart  time.Time
+
+	now   func() time.Time
+	sleep func(time.Duration)
 }
 
 func (r *Replay) timeOffset(eventTime time.Time) time.Duration {
-	now := time.Now()
+	now := r.now()
 	eventElapsed := eventTime.Sub(r.firstEvent)
 	localElapsed := time.Duration(float64(now.Sub(r.realStart)) * r.timeScale)
 
@@ -43,7 +46,7 @@ func (r *Replay) timeOffset(eventTime time.Time) time.Duration {
 func (r *Replay) syncTime(eventTime time.Time) {
 	toSleep := r.timeOffset(eventTime)
 	if toSleep > 0 {
-		time.Sleep(toSleep)
+		r.sleep(toSleep)
 	}
 }
 
@@ -77,7 +80,7 @@ func New(scale float64) *Replay {
 	if scale <= 0 {
 		log.Panic("Timescale must be > 0")
 	}
-	return &Replay{timeScale: scale}
+	return &Replay{timeScale: scale, now: time.Now, sleep: time.Sleep}
 }
 
 // Run the replay.
@@ -89,7 +92,7 @@ func (r *Replay) Run(s Source, action Action) time.Duration {
 		return time.Duration(0)
 	}
 
-	r.realStart = time.Now()
+	r.realStart = r.now()
 	r.firstEvent = event.TS()
 	eventTime := r.firstEvent
 
