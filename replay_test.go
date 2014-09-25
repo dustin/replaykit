@@ -39,6 +39,13 @@ func (f *fakeTime) sleep(d time.Duration) {
 	f.passed += d
 }
 
+func useFakeTime(r *Replay) (*Replay, *fakeTime) {
+	tm := &fakeTime{}
+	r.now = tm.now
+	r.sleep = tm.sleep
+	return r, tm
+}
+
 type dumbEvent time.Time
 
 func (d dumbEvent) TS() time.Time { return time.Time(d) }
@@ -56,10 +63,7 @@ func genEvents() []Event {
 var noopAction = FunctionAction(func(Event) {})
 
 func TestRun(t *testing.T) {
-	r := New(1)
-	tm := &fakeTime{}
-	r.now = tm.now
-	r.sleep = tm.sleep
+	r, tm := useFakeTime(New(1))
 
 	off := r.Run(CollectionSource(genEvents()), noopAction)
 	if off != 0 {
@@ -71,10 +75,7 @@ func TestRun(t *testing.T) {
 }
 
 func TestRun2x(t *testing.T) {
-	r := New(2)
-	tm := &fakeTime{}
-	r.now = tm.now
-	r.sleep = tm.sleep
+	r, tm := useFakeTime(New(2))
 
 	off := r.Run(CollectionSource(genEvents()), noopAction)
 	if off != 0 {
@@ -86,10 +87,7 @@ func TestRun2x(t *testing.T) {
 }
 
 func TestRunHalfx(t *testing.T) {
-	r := New(0.5)
-	tm := &fakeTime{}
-	r.now = tm.now
-	r.sleep = tm.sleep
+	r, tm := useFakeTime(New(0.5))
 
 	off := r.Run(CollectionSource(genEvents()), noopAction)
 	if off != 0 {
@@ -101,7 +99,7 @@ func TestRunHalfx(t *testing.T) {
 }
 
 func TestRunNil(t *testing.T) {
-	r := New(1)
+	r, _ := useFakeTime(New(1))
 	off := r.Run(CollectionSource(nil), FunctionAction(func(Event) {}))
 	if off != 0 {
 		t.Errorf("Expected nil input to run with 0 off, got %v", off)
